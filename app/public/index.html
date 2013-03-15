@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WebSocket Persistent Echo Broadcast Client</title>
+    <meta charset="UTF-8" />
+    <style type="text/css">
+        body {font-family:Consolas,monospace; padding:1em; font-size:1.1em; background:#ffffc0}
+        h4{text-decoration:underline; margin-top:0}
+        input {padding:0.5em 0.5em}
+        input[type=text] {width:24em}
+        #url {background:#222; color:#0f0; font-family:Consolas,monospace}
+        small {display:block}
+        #message {border:1px solid #999; padding:0.5em; margin-top:1em; font-size:0.7em; background:white}
+        #message p {margin:0.3em 0; padding-bottom:0.3em; border-bottom:1px solid #ccccff; color:#070}
+    </style>
+    <script>
+        "use strict";
+        // Initialize everything when the window finishes loading
+        window.addEventListener("load", function (event) {
+            var status = document.getElementById("status");
+            var url = document.getElementById("url");
+            var open = document.getElementById("open");
+            var close = document.getElementById("close");
+            var send = document.getElementById("send");
+            var wordForm = document.getElementById("wordForm");
+            var words = document.getElementById("words");
+            var message = document.getElementById("message");
+            var socket;
+
+            status.textContent = "Not Connected";
+            url.value = "wss://smartjs-programico.dotcloud.com";
+            close.disabled = true;
+            send.disabled = true;
+
+            // Create a new connection when the Connect button is clicked
+            open.addEventListener("click", function (event) {
+                open.disabled = true;
+                socket = new WebSocket(url.value, "echo-protocol");
+
+                socket.addEventListener("open", function (event) {
+                    close.disabled = false;
+                    send.disabled = false;
+                    status.textContent = "Connected";
+                });
+
+                // Display messages received from the server
+                socket.addEventListener("message", function (event) {
+                    message.innerHTML += "<p>Server Says: " + event.data + "</p>";
+                });
+
+                // Display any errors that occur
+                socket.addEventListener("error", function (event) {
+                    message.textContent = "Error, unable to connect.";
+                });
+
+                socket.addEventListener("close", function (event) {
+                    open.disabled = false;
+                    close.disabled = true;
+                    send.disabled = true;
+                    status.textContent = "Not Connected";
+                });
+            });
+
+            // Close the connection when the Disconnect button is clicked
+            close.addEventListener("click", function (event) {
+                close.disabled = true;
+                send.disabled = true;
+                message.textContent = "";
+                socket.close();
+            });
+
+            // Send text to the server when the wordForm is submitted
+            wordForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                if (send.disabled) {
+                    status.textContent = "> Not Connected <";
+                } else {
+                    socket.send(words.value);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h4>WebSocket Persistent Echo Broadcast Client (pure Html)</h4>
+    Status: <span id="status"></span><br />
+    <small>URL: <input type="text" id="url" /></small>
+    <input id="open" type="button" value="Connect" /> 
+    <input id="close" type="button" value="Disconnect" /><br />
+    <form id="wordForm">
+        <input type="text" id="words" value="hello world"/>
+        <input type="submit" value="send" id="send" />
+    </form>
+    <div id="message"></div>
+</body>
+</html>
